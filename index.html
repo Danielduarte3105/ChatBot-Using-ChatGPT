@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+
+:root{
+  --dark: #0c0c0c;
+  --white: #fff;
+  --purple: #5959ff;
+  --gray: #949494;
+  --gray2: #cccccc;
+}
+
+body{
+  background-color: var(--dark);
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--white);
+  display: flex;
+  justify-content: center;
+  height: 100vh;
+}
+
+.box-questions{
+  margin-top: 3rem;
+  background-color: var(--white);
+  color: var(--dark);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  max-height: 800px;
+  width: 600px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.header{
+  background-color: var(--purple);
+  color: var(--white);
+  border-radius: 10px 10px 0 0;
+  font-size: 1.4rem;
+}
+
+.footer{
+  background-color: var(--purple);
+  border-radius: 0 0 10px 10px;
+  padding: 1rem;
+}
+
+input{
+  width: 50%;
+  border: none;
+  outline: none;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+button{
+  border: none;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 1rem;
+}
+
+button:hover{
+  cursor: pointer;
+  transition: .4s;
+  background-color: var(--gray);
+}
+
+#history{
+  padding: 1rem;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+}
+
+.box-my-message{
+  display: flex;
+  justify-content: flex-end;
+}
+
+.box-response-message{
+  display: flex;
+  justify-content: flex-start;
+}
+
+.my-message,
+.response-message{
+  padding: 1rem;
+  border-radius: 10px;
+  color: white;
+  margin: 0;
+}
+
+.my-message{
+  text-align: right;
+  background-color: var(--gray);
+}
+
+.response-message{
+  text-align: left;
+  background-color: var(--gray2);
+}
+
+  </style>
+  <title>Perguntas e respostas - CHATGPT</title>
+</head>
+<body>
+  <div class="box-questions">
+    <div class="header">
+      <p>Perguntas e respostas - CHATGPT</p>
+    </div>
+    <p id="status"></p>
+    <div id="history">
+      <!-- Aqui vai o chat gerado conforme as respostas -->
+    </div>
+    <div class="footer">
+      <input type="text" id="message-input" placeholder="Pergunte aqui...">
+      <button class="btn-submit" id="btn-submit" onclick="sendMessage()">Enviar</button>
+    </div>
+  </div>
+</body>
+<script>
+
+// Chave de API do OpenAI
+const apiKey = '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'
+
+function sendMessage(){
+    var message = document.getElementById('message-input')
+    if(!message.value)
+    {
+        message.style.border = '1px solid red'
+        return;
+    }
+    message.style.border = 'none'
+
+    var status = document.getElementById('status')
+    var btnSubmit = document.getElementById('btn-submit')
+
+    status.style.display = 'block'
+    status.innerHTML = 'Carregando...'
+    btnSubmit.disabled = true
+    btnSubmit.style.cursor = 'not-allowed'
+    message.disabled = true
+
+    fetch("https://api.openai.com/v1/completions",{
+        method: 'POST',
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+            model: "text-davinci-003",
+            prompt: message.value,
+            max_tokens: 2048, // tamanho da resposta
+            temperature: 0.5 // criatividade na resposta
+        })
+    })
+    .then((response) => response.json())
+    .then((response) => {
+        let r = response.choices[0]['text']
+        status.style.display = 'none'
+        showHistory(message.value,r)
+    })
+    .catch((e) => {
+        console.log(`Error -> ${e}`)
+        status.innerHTML = 'Erro, tente novamente mais tarde...'
+    })
+    .finally(() => {
+        btnSubmit.disabled = false
+        btnSubmit.style.cursor = 'pointer'
+        message.disabled = false
+        message.value = ''
+    })
+}
+
+function showHistory(message,response){
+    var historyBox = document.getElementById('history')
+
+    // My message
+    var boxMyMessage = document.createElement('div')
+    boxMyMessage.className = 'box-my-message'
+
+    var myMessage = document.createElement('p')
+    myMessage.className = 'my-message'
+    myMessage.innerHTML = message
+
+    boxMyMessage.appendChild(myMessage)
+
+    historyBox.appendChild(boxMyMessage)
+
+    // Response message
+    var boxResponseMessage = document.createElement('div')
+    boxResponseMessage.className = 'box-response-message'
+
+    var chatResponse = document.createElement('p')
+    chatResponse.className = 'response-message'
+    chatResponse.innerHTML = response
+
+    boxResponseMessage.appendChild(chatResponse)
+
+    historyBox.appendChild(boxResponseMessage)
+
+    // Levar scroll para o final
+    historyBox.scrollTop = historyBox.scrollHeight
+}
+
+</script>
+</html>
